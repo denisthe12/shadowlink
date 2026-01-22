@@ -42,6 +42,17 @@ export interface Employee {
     employerWallet: string;
 }
 
+export interface Invoice {
+    _id: string;
+    invoiceNumber: string;
+    supplierWallet: string;
+    buyerWallet: string;
+    totalAmount: number;
+    status: 'pending' | 'paid' | 'cancelled';
+    description: string; // Нужно добавить в схему на бэке, если нет
+    createdAt: string;
+}
+
 export const api = {
     // Users
     getUsers: () => axios.get<User[]>(`${API_URL}/users`),
@@ -67,4 +78,9 @@ export const api = {
     getEmployees: (employerWallet: string) => axios.get<Employee[]>(`${API_URL}/employees?employer=${employerWallet}`),
     addEmployee: (data: Partial<Employee>) => axios.post<Employee>(`${API_URL}/employees`, data),
     removeEmployee: (id: string) => axios.delete(`${API_URL}/employees/${id}`),
+    getInvoices: (wallet: string, type: 'incoming' | 'outgoing') => 
+        axios.get<Invoice[]>(`${API_URL}/invoices?wallet=${wallet}&type=${type}`),
+    createInvoice: (data: Partial<Invoice>) => axios.post<Invoice>(`${API_URL}/invoices`, data),
+    payInvoice: (id: string, txHash: string) => axios.put(`${API_URL}/invoices/${id}/pay`, { txHash }),
+    cancelInvoice: (id: string) => axios.put(`${API_URL}/invoices/${id}/cancel`),
 };

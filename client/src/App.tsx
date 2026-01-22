@@ -10,6 +10,7 @@ import clsx from 'clsx'; // Утилита для удобного объеди�
 import { TenderModule } from './components/TenderModule';
 import { Toaster } from 'react-hot-toast';
 import { PayrollModule } from './components/PayrollModule';
+import { InvoiceModule } from './components/InvoiceModule';
 
 // Стили кошелька
 import '@solana/wallet-adapter-react-ui/styles.css';
@@ -141,7 +142,7 @@ const ShadowLinkApp = () => {
               </h2>
               <p className="text-slate-500 mt-2 text-lg">
                 {role === 'gov' && 'Manage your secure transactions powered by Zero-Knowledge proofs.'}
-                {role === 'supplier' && 'Manage your secure transactions powered by Zero-Knowledge proofs.'}
+                {role === 'supplier' && 'Streamline your B2B payments and protect commercial secrets.'}
                 {role === 'employee' && 'Batch salary payments with zero-knowledge privacy.'}
 
               </p>
@@ -162,7 +163,7 @@ const ShadowLinkApp = () => {
             
             {/* Для поставщиков мы ТОЖЕ показываем тендеры, так как они там участвуют */}
             {role === 'supplier' && (
-                <TenderModule />
+                <InvoiceModule currentUser={{ wallet: 'BobBuilder22222222222222' }} />
             )}
 
             {/* Заглушки для остальных модулей пока что */}

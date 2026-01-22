@@ -2,7 +2,7 @@
 import { Body, Controller, Get, Param, Post, Put, Delete, Query } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { User, Tender, Bid, Employee } from './database/schemas';
+import { User, Tender, Bid, Employee, Invoice } from './database/schemas';
 
 // Префикс 'api' означает, что все методы будут доступны по /api/...
 @Controller('api')
@@ -12,6 +12,7 @@ export class AppController {
     @InjectModel(Tender.name) private tenderModel: Model<Tender>,
     @InjectModel(Bid.name) private bidModel: Model<Bid>,
     @InjectModel(Employee.name) private employeeModel: Model<Employee>,
+    @InjectModel(Invoice.name) private invoiceModel: Model<Invoice>,
   ) {}
 
   // --- Users ---
@@ -110,6 +111,40 @@ export class AppController {
   @Delete('employees/:id')
   async removeEmployee(@Param('id') id: string) {
     return this.employeeModel.findByIdAndDelete(id);
+  }
+
+  // --- Invoices ---
+  
+  // Получить инвойсы (входящие или исходящие)
+  @Get('invoices')
+  async getInvoices(@Query('wallet') wallet: string, @Query('type') type: 'incoming' | 'outgoing') {
+    if (type === 'outgoing') {
+        return this.invoiceModel.find({ supplierWallet: wallet }).sort({ createdAt: -1 }).exec();
+    } else {
+        return this.invoiceModel.find({ buyerWallet: wallet }).sort({ createdAt: -1 }).exec();
+    }
+  }
+
+  @Post('invoices')
+  async createInvoice(@Body() body: any) {
+    return this.invoiceModel.create({
+        ...body,
+        invoiceNumber: `INV-${Date.now().toString().slice(-6)}`,
+        status: 'pending'
+    });
+  }
+
+  @Put('invoices/:id/pay')
+  async payInvoice(@Param('id') id: string, @Body() body: { txHash: string }) {
+    return this.invoiceModel.findByIdAndUpdate(id, { 
+        status: 'paid',
+        // В реале мы бы сохранили сюда txHash для верификации
+    }, { new: true });
+  }
+
+  @Put('invoices/:id/cancel')
+  async cancelInvoice(@Param('id') id: string) {
+    return this.invoiceModel.findByIdAndUpdate(id, { status: 'cancelled' }, { new: true });
   }
 
 }

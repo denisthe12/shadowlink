@@ -90,7 +90,10 @@ export class Invoice {
   @Prop({ required: true })
   totalAmount: number; // Для отображения поставщику, в блокчейне скроем
 
-  @Prop({ enum: ['pending', 'paid'], default: 'pending' })
+  @Prop()
+  description: string; // "Оплата за серверы"
+
+  @Prop({ enum: ['pending', 'paid', 'cancelled'], default: 'pending' }) // Добавил cancelled
   status: string;
 }
 export const InvoiceSchema = SchemaFactory.createForClass(Invoice);
