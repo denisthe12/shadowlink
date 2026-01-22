@@ -1,7 +1,8 @@
 // server/src/database/database.module.ts
-import { Module, OnModuleInit } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import { User, UserSchema, Tender, TenderSchema, Invoice, InvoiceSchema } from './schemas';
+// Добавляем Bid и BidSchema в импорт
+import { User, UserSchema, Tender, TenderSchema, Invoice, InvoiceSchema, Bid, BidSchema } from './schemas';
 import { SeedService } from './seed.service';
 
 @Module({
@@ -10,6 +11,8 @@ import { SeedService } from './seed.service';
       { name: User.name, schema: UserSchema },
       { name: Tender.name, schema: TenderSchema },
       { name: Invoice.name, schema: InvoiceSchema },
+      // ВОТ ЭТОЙ СТРОКИ НЕ ХВАТАЛО:
+      { name: Bid.name, schema: BidSchema }, 
     ]),
   ],
   providers: [SeedService],

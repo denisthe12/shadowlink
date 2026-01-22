@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 import { PhantomWalletAdapter, SolflareWalletAdapter } from '@solana/wallet-adapter-wallets';
@@ -7,6 +7,8 @@ import { clusterApiUrl } from '@solana/web3.js';
 import { initializeShadowWire } from './utils/shadow-sdk';
 import { LayoutDashboard, Briefcase, Users, FileText, ShieldCheck } from 'lucide-react';
 import clsx from 'clsx'; // Утилита для удобного объединения классов
+import { TenderModule } from './components/TenderModule';
+import { Toaster } from 'react-hot-toast';
 
 // Стили кошелька
 import '@solana/wallet-adapter-react-ui/styles.css';
@@ -21,6 +23,28 @@ function App() {
       <WalletProvider wallets={wallets} autoConnect>
         <WalletModalProvider>
           <ShadowLinkApp />
+          <Toaster 
+            position="bottom-right"
+            toastOptions={{
+              style: {
+                background: '#1e293b', // Slate-800
+                color: '#fff',
+                border: '1px solid #334155',
+              },
+              success: {
+                iconTheme: {
+                  primary: '#10b981', // Emerald-500
+                  secondary: '#fff',
+                },
+              },
+              error: {
+                iconTheme: {
+                  primary: '#ef4444', // Red-500
+                  secondary: '#fff',
+                },
+              },
+            }}
+          />
         </WalletModalProvider>
       </WalletProvider>
     </ConnectionProvider>
@@ -126,19 +150,22 @@ const ShadowLinkApp = () => {
               <StatsCard title="Network Status" value="Solana Devnet" subtext="Ready for USD1" icon={<LayoutDashboard />} />
             </div>
 
-            {/* Empty State / Welcome */}
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-12 text-center flex flex-col items-center justify-center min-h-[400px]">
-                <div className="bg-slate-50 p-6 rounded-full mb-6">
-                  <ShieldCheck className="w-16 h-16 text-slate-300" />
-                </div>
-                <h3 className="text-2xl font-bold text-slate-800 mb-3">
-                  Module Ready: {role.toUpperCase()}
-                </h3>
-                <p className="text-slate-500 max-w-lg mx-auto text-lg leading-relaxed">
-                  This module is connected to the ShadowWire Privacy Layer. 
-                  Transactions initiated here will be encrypted using Bulletproofs before being sent to the Solana blockchain.
-                </p>
-            </div>
+            {/* Conditional Modules */}
+            {role === 'gov' && (
+                <TenderModule /> 
+            )}
+            
+            {/* Для поставщиков мы ТОЖЕ показываем тендеры, так как они там участвуют */}
+            {role === 'supplier' && (
+                <TenderModule />
+            )}
+
+            {/* Заглушки для остальных модулей пока что */}
+            {role === 'employee' && (
+                 <div className="bg-white p-12 text-center border rounded-2xl">
+                    <h3 className="text-xl font-bold text-slate-400">Payroll Module Coming in Step 3...</h3>
+                 </div>
+            )}
 
           </div>
         </div>

@@ -9,14 +9,11 @@ export class User {
   @Prop({ required: true, unique: true })
   walletAddress: string;
 
-  @Prop()
-  name: string;
+  @Prop({ required: true })
+  name: string; // "Builder Bob"
 
   @Prop()
-  companyName: string;
-
-  @Prop({ enum: ['admin', 'user'], default: 'user' })
-  role: string;
+  role: 'gov' | 'supplier' | 'employee'; // Основная роль
 }
 export const UserSchema = SchemaFactory.createForClass(User);
 
@@ -31,17 +28,32 @@ export class Tender {
   description: string;
 
   @Prop({ required: true })
-  maxBudget: number; // Видимый бюджет (максимум)
+  maxBudget: number;
 
-  @Prop({ enum: ['open', 'closed'], default: 'open' })
+  @Prop({ default: 'open' })
   status: string;
 
   @Prop({ required: true })
   creatorWallet: string;
+
+  @Prop()
+  winnerWallet: string;
+
+  @Prop()
+  finalAmount: number;
+
+  @Prop({ required: true }) // НОВОЕ ПОЛЕ
+  deadline: Date;
+
+  @Prop()
+  workSubmission: string; // Отчет о выполненной работе
+  
+  @Prop()
+  submittedAt: Date; // Дата сдачи
 }
 export const TenderSchema = SchemaFactory.createForClass(Tender);
 
-// --- Bid Schema (Ставки) ---
+// --- Bid Schema ---
 export type BidDocument = Bid & Document;
 @Schema({ timestamps: true })
 export class Bid {
@@ -51,10 +63,14 @@ export class Bid {
   @Prop({ required: true })
   bidderWallet: string;
 
-  // Сумма здесь НЕ хранится в открытом виде для честности,
-  // либо хранится зашифрованной. Ссылка на транзакцию - главное доказательство.
-  @Prop()
-  txSignature: string; 
+  @Prop({ required: true })
+  bidderName: string; // Для удобства отображения
+
+  @Prop({ required: true })
+  amount: number; // Предложенная цена
+
+  @Prop({ default: false })
+  isDepositPaid: boolean; // Оплачен ли взнос за участие
 }
 export const BidSchema = SchemaFactory.createForClass(Bid);
 
