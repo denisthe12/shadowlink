@@ -2,7 +2,7 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 // Добавляем Bid и BidSchema в импорт
-import { User, UserSchema, Tender, TenderSchema, Invoice, InvoiceSchema, Bid, BidSchema } from './schemas';
+import { User, UserSchema, Tender, TenderSchema, Invoice, InvoiceSchema, Bid, BidSchema, Employee, EmployeeSchema } from './schemas';
 import { SeedService } from './seed.service';
 
 @Module({
@@ -13,6 +13,7 @@ import { SeedService } from './seed.service';
       { name: Invoice.name, schema: InvoiceSchema },
       // ВОТ ЭТОЙ СТРОКИ НЕ ХВАТАЛО:
       { name: Bid.name, schema: BidSchema }, 
+      { name: Employee.name, schema: EmployeeSchema },
     ]),
   ],
   providers: [SeedService],

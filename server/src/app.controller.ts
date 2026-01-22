@@ -1,8 +1,8 @@
 // server/src/app.controller.ts
-import { Body, Controller, Get, Param, Post, Put, Delete } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Put, Delete, Query } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { User, Tender, Bid } from './database/schemas';
+import { User, Tender, Bid, Employee } from './database/schemas';
 
 // Префикс 'api' означает, что все методы будут доступны по /api/...
 @Controller('api')
@@ -11,6 +11,7 @@ export class AppController {
     @InjectModel(User.name) private userModel: Model<User>,
     @InjectModel(Tender.name) private tenderModel: Model<Tender>,
     @InjectModel(Bid.name) private bidModel: Model<Bid>,
+    @InjectModel(Employee.name) private employeeModel: Model<Employee>,
   ) {}
 
   // --- Users ---
@@ -93,6 +94,22 @@ export class AppController {
   async deleteBid(@Param('id') id: string) {
     console.log(`Deleting bid ${id}`);
     return this.bidModel.findByIdAndDelete(id);
+  }
+
+  // --- Payroll ---
+  @Get('employees')
+  async getEmployees(@Query('employer') employer: string) {
+    return this.employeeModel.find({ employerWallet: employer }).exec();
+  }
+
+  @Post('employees')
+  async addEmployee(@Body() body: any) {
+    return this.employeeModel.create(body);
+  }
+
+  @Delete('employees/:id')
+  async removeEmployee(@Param('id') id: string) {
+    return this.employeeModel.findByIdAndDelete(id);
   }
 
 }

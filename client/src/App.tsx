@@ -9,6 +9,7 @@ import { LayoutDashboard, Briefcase, Users, FileText, ShieldCheck } from 'lucide
 import clsx from 'clsx'; // Утилита для удобного объединения классов
 import { TenderModule } from './components/TenderModule';
 import { Toaster } from 'react-hot-toast';
+import { PayrollModule } from './components/PayrollModule';
 
 // Стили кошелька
 import '@solana/wallet-adapter-react-ui/styles.css';
@@ -136,20 +137,24 @@ const ShadowLinkApp = () => {
               <h2 className="text-3xl font-bold text-slate-900 tracking-tight">
                 {role === 'gov' && 'Public Procurement'}
                 {role === 'supplier' && 'Supply Chain Invoices'}
-                {role === 'employee' && 'Payroll Dashboard'}
+                {role === 'employee' && 'Corporate Payroll'}
               </h2>
               <p className="text-slate-500 mt-2 text-lg">
-                Manage your secure transactions powered by Zero-Knowledge proofs.
+                {role === 'gov' && 'Manage your secure transactions powered by Zero-Knowledge proofs.'}
+                {role === 'supplier' && 'Manage your secure transactions powered by Zero-Knowledge proofs.'}
+                {role === 'employee' && 'Batch salary payments with zero-knowledge privacy.'}
+
               </p>
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <StatsCard title="Total Secured Volume" value="$HIDDEN" subtext="Encrypted on-chain" icon={<ShieldCheck />} />
-              <StatsCard title="Active Operations" value="12" subtext="Pending processing" icon={<FileText />} />
-              <StatsCard title="Network Status" value="Solana Devnet" subtext="Ready for USD1" icon={<LayoutDashboard />} />
-            </div>
-
+            {role === 'gov' && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <StatsCard title="Total Secured Volume" value="$HIDDEN" subtext="Encrypted on-chain" icon={<ShieldCheck />} />
+                <StatsCard title="Active Operations" value="12" subtext="Pending processing" icon={<FileText />} />
+                <StatsCard title="Network Status" value="Solana Devnet" subtext="Ready for USD1" icon={<LayoutDashboard />} />
+              </div>
+            )}
             {/* Conditional Modules */}
             {role === 'gov' && (
                 <TenderModule /> 
@@ -162,9 +167,7 @@ const ShadowLinkApp = () => {
 
             {/* Заглушки для остальных модулей пока что */}
             {role === 'employee' && (
-                 <div className="bg-white p-12 text-center border rounded-2xl">
-                    <h3 className="text-xl font-bold text-slate-400">Payroll Module Coming in Step 3...</h3>
-                 </div>
+                 <PayrollModule currentUser={{ wallet: 'HR_WALLET_DEMO', name: 'HR Department' }} />
             )}
 
           </div>

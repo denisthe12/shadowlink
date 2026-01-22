@@ -94,3 +94,24 @@ export class Invoice {
   status: string;
 }
 export const InvoiceSchema = SchemaFactory.createForClass(Invoice);
+
+// --- Employee Schema ---
+export type EmployeeDocument = Employee & Document;
+@Schema({ timestamps: true })
+export class Employee {
+  @Prop({ required: true })
+  employerWallet: string; // Кто платит (компания)
+
+  @Prop({ required: true })
+  name: string;
+
+  @Prop({ required: true })
+  walletAddress: string;
+
+  @Prop({ required: true })
+  salary: number; // Сумма зарплаты (USD)
+
+  @Prop({ default: 'active' })
+  status: string;
+}
+export const EmployeeSchema = SchemaFactory.createForClass(Employee);

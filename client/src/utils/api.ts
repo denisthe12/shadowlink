@@ -34,6 +34,14 @@ export interface User {
     role: 'gov' | 'supplier' | 'employee';
 }
 
+export interface Employee {
+    _id: string;
+    name: string;
+    walletAddress: string;
+    salary: number;
+    employerWallet: string;
+}
+
 export const api = {
     // Users
     getUsers: () => axios.get<User[]>(`${API_URL}/users`),
@@ -54,4 +62,9 @@ export const api = {
     updateBid: (bidId: string, amount: number) => axios.put<Bid>(`${API_URL}/bids/${bidId}`, { amount }),
     deleteBid: (bidId: string) => axios.delete(`${API_URL}/bids/${bidId}`),
     submitWork: (tenderId: string, submission: string) => axios.put(`${API_URL}/tenders/${tenderId}/submit`, { submission }),
+
+    // Payroll
+    getEmployees: (employerWallet: string) => axios.get<Employee[]>(`${API_URL}/employees?employer=${employerWallet}`),
+    addEmployee: (data: Partial<Employee>) => axios.post<Employee>(`${API_URL}/employees`, data),
+    removeEmployee: (id: string) => axios.delete(`${API_URL}/employees/${id}`),
 };
