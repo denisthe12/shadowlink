@@ -163,7 +163,7 @@ const ShadowLinkApp = () => {
             
             {/* Для поставщиков мы ТОЖЕ показываем тендеры, так как они там участвуют */}
             {role === 'supplier' && (
-                <InvoiceModule currentUser={{ wallet: 'BobBuilder22222222222222' }} />
+                <InvoiceModule  />
             )}
 
             {/* Заглушки для остальных модулей пока что */}

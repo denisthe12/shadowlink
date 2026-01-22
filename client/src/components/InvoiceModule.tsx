@@ -12,10 +12,11 @@ const MOCK_USERS = [
     { wallet: 'AliceSupply33333333333', name: 'Alice Supplies' },
 ];
 
-export const InvoiceModule = ({ currentUser }: { currentUser: any }) => {
+export const InvoiceModule = () => {
     const { publicKey } = useWallet();
     const [activeTab, setActiveTab] = useState<'incoming' | 'outgoing'>('incoming');
     const [invoices, setInvoices] = useState<Invoice[]>([]);
+    const [currentUser, setCurrentUser] = useState(MOCK_USERS[1]); 
     
     const [showCreate, setShowCreate] = useState(false);
     // Теперь buyerWallet выбираем из списка
@@ -29,6 +30,7 @@ export const InvoiceModule = ({ currentUser }: { currentUser: any }) => {
     }, [activeTab, currentUser]);
 
     const loadInvoices = async () => {
+        console.log(`Loading ${activeTab} invoices for ${currentUser.name} (${currentUser.wallet})`);
         try {
             const res = await api.getInvoices(currentUser.wallet, activeTab);
             setInvoices(res.data);
@@ -70,9 +72,31 @@ export const InvoiceModule = ({ currentUser }: { currentUser: any }) => {
 
     // Вспомогательная функция для имени
     const getUserName = (wallet: string) => MOCK_USERS.find(u => u.wallet === wallet)?.name || wallet.slice(0,8)+'...';
+    
+    useEffect(() => {
+        const firstOtherUser = MOCK_USERS.find(u => u.wallet !== currentUser.wallet) || MOCK_USERS[0];
+        setNewInv(prev => ({ ...prev, buyerWallet: firstOtherUser.wallet }));
+    }, [currentUser, showCreate]);
 
     return (
         <div className="space-y-6">
+
+            <div className="bg-slate-800 text-white p-3 rounded-lg flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2 text-sm">
+                    <User size={16} className="text-emerald-400"/>
+                    <span className="text-slate-400">Invoice View as:</span>
+                    <select 
+                        className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-emerald-400 font-bold outline-none cursor-pointer"
+                        value={currentUser.wallet}
+                        onChange={(e) => setCurrentUser(MOCK_USERS.find(u => u.wallet === e.target.value) || MOCK_USERS[1])}
+                    >
+                        {MOCK_USERS.map(u => (
+                            <option key={u.wallet} value={u.wallet}>{u.name}</option>
+                        ))}
+                    </select>
+                </div>
+            </div>
+
             {/* Header Controls */}
             <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-200">
                 <div className="flex gap-2 bg-slate-100 p-1 rounded-lg">
