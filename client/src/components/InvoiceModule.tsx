@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { ShadowWireClient } from '@radr/shadowwire';
 import { useWallet } from '@solana/wallet-adapter-react';
 import type {Invoice} from '../utils/api';
 import { api } from '../utils/api';
@@ -7,16 +8,18 @@ import toast from 'react-hot-toast';
 
 // Те же пользователи для удобства выбора получателя
 const MOCK_USERS = [
-    { wallet: 'GovWallet1111111111111111', name: 'Government Corp' },
-    { wallet: 'BobBuilder22222222222222', name: 'Bob Construction' },
+    { wallet: '28dVMg5xb6B21herXZKCXoXd64y76FuUKKxHoWBYYZ8H', name: 'Government Corp' },
+    { wallet: '6AExadw4VtyHvC6p9B9n2LLBWz7MemzPb9V6kkkgrTkX', name: 'Bob Construction' },
     { wallet: 'AliceSupply33333333333', name: 'Alice Supplies' },
 ];
 
 export const InvoiceModule = () => {
-    const { publicKey } = useWallet();
+    const { publicKey, signMessage } = useWallet();
+    const [shadowClient] = useState(() => new ShadowWireClient({ debug: true }));
     const [activeTab, setActiveTab] = useState<'incoming' | 'outgoing'>('incoming');
     const [invoices, setInvoices] = useState<Invoice[]>([]);
     const [currentUser, setCurrentUser] = useState(MOCK_USERS[1]); 
+    
     
     const [showCreate, setShowCreate] = useState(false);
     // Теперь buyerWallet выбираем из списка
@@ -52,15 +55,36 @@ export const InvoiceModule = () => {
     };
 
     const handlePay = async (inv: Invoice) => {
-        if (!publicKey) return toast.error("Connect wallet!");
-        const toastId = toast.loading(`Paying ${inv.invoiceNumber} privately...`);
+        if (!publicKey || !signMessage) return toast.error("Connect wallet first!");
+        
+        const toastId = toast.loading(`Initiating MAINNET ShadowWire transfer...`);
+        
         try {
-            await new Promise(resolve => setTimeout(resolve, 3000)); // Эмуляция
-            const txHash = "sig_" + Math.random().toString(36).substr(2, 9);
-            await api.payInvoice(inv._id, txHash);
+            console.log("🚀 Starting ShadowWire transfer (Mainnet)...");
+            
+            // Вызываем SDK. В новой версии баг с external-transfer должен быть исправлен.
+            const result = await shadowClient.transfer({
+                sender: publicKey.toBase58(),
+                recipient: inv.supplierWallet,
+                amount: 0.1, // Твои 0.1 USD1
+                token: 'USD1', 
+                type: 'external',
+                wallet: { signMessage }
+            });
+
+            console.log("✅ ShadowWire Transaction Complete:", result);
+            
+            // Если код дошел сюда, значит сервер ответил 200 OK, и транзакция прошла
+            await api.payInvoice(inv._id, result.tx_signature);
+            
             loadInvoices();
-            toast.success("Payment successful!", { id: toastId });
-        } catch (e) { toast.error("Error", { id: toastId }); }
+            toast.success(`Payment successful! Tx: ${result.tx_signature.slice(0, 8)}...`, { id: toastId });
+
+        } catch (e: any) {
+            console.error("ShadowWire Error:", e);
+            // Теперь мы честно показываем ошибку, если она есть
+            toast.error(`Transfer Failed: ${e.message}`, { id: toastId });
+        }
     };
 
     const handleCancel = async (inv: Invoice) => {
