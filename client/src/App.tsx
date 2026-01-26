@@ -17,7 +17,7 @@ import '@solana/wallet-adapter-react-ui/styles.css';
 
 function App() {
   const network = WalletAdapterNetwork.Mainnet;
-  const endpoint = useMemo(() => clusterApiUrl(network), [network]);
+  const endpoint = useMemo(() => `https://mainnet.helius-rpc.com/?api-key=${import.meta.env.VITE_API_KEY}`, []);
   const wallets = useMemo(() => [new PhantomWalletAdapter(), new SolflareWalletAdapter()], []);
 
   return (

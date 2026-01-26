@@ -26,7 +26,7 @@ export default defineConfig({
     port: 5173, // Стандартный порт Vite (можно оставить как есть)
     proxy: {
       '/api': {
-        target: 'http://127.0.0.1:3000', // ИСПОЛЬЗУЕМ IP ВМЕСТО localhost
+        target: 'http://localhost:8000', // ИСПОЛЬЗУЕМ IP ВМЕСТО localhost
         changeOrigin: true,
         secure: false,
       },
