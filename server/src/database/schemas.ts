@@ -2,22 +2,60 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 
-// --- User Schema ---
+// --- Sub-schema for Address Book ---
+@Schema({ _id: false }) // Не создаем отдельный _id для контакта
+export class Contact {
+  @Prop({ required: true })
+  name: string;
+
+  @Prop({ required: true })
+  walletAddress: string;
+}
+export const ContactSchema = SchemaFactory.createForClass(Contact);
+
+@Schema({ _id: false })
+export class CompanyProfile {
+  @Prop({ default: '' })
+  name: string;
+
+  @Prop({ default: '' })
+  description: string;
+
+  @Prop({ default: '' })
+  industry: string;
+
+  @Prop({ default: 0 })
+  employeesCount: number;
+
+  // Statistics (можно считать динамически, но для MVP храним тут)
+  @Prop({ default: 0 })
+  tendersCreated: number;
+
+  @Prop({ default: 0 })
+  tendersWon: number;
+}
+export const CompanyProfileSchema = SchemaFactory.createForClass(CompanyProfile);
+
+// --- User Schema (Updated) ---
 export type UserDocument = User & Document;
 @Schema({ timestamps: true })
 export class User {
   @Prop({ required: true, unique: true })
-  walletAddress: string;
+  walletAddress: string; // Главный ID
 
-  @Prop({ required: true })
-  name: string; // "Builder Bob"
+  @Prop({ default: false })
+  isRegistered: boolean; // True, если сделал хоть один Deposit в ShadowWire
 
-  @Prop()
-  role: 'gov' | 'supplier' | 'employee'; // Основная роль
+  // "Телефонная книга" пользователя
+  @Prop({ type: [ContactSchema], default: [] })
+  contacts: Contact[];
+
+  @Prop({ type: CompanyProfileSchema, default: () => ({}) })
+  company: CompanyProfile;
 }
 export const UserSchema = SchemaFactory.createForClass(User);
 
-// --- Tender Schema ---
+// --- Остальные схемы оставляем без изменений ---
 export type TenderDocument = Tender & Document;
 @Schema({ timestamps: true })
 export class Tender {
@@ -42,18 +80,24 @@ export class Tender {
   @Prop()
   finalAmount: number;
 
-  @Prop({ required: true }) // НОВОЕ ПОЛЕ
+  @Prop() // Сделал optional, чтобы старый код не падал, но в логике будем использовать
   deadline: Date;
 
   @Prop()
-  workSubmission: string; // Отчет о выполненной работе
+  workSubmission: string;
   
   @Prop()
-  submittedAt: Date; // Дата сдачи
+  submittedAt: Date;
+
+  // НОВЫЕ ПОЛЯ
+  @Prop({ default: 'external' })
+  preferredPaymentType: string; // 'internal' | 'external'
+
+  @Prop()
+  preferredPaymentWallet: string; // Кошелек для выплаты
 }
 export const TenderSchema = SchemaFactory.createForClass(Tender);
 
-// --- Bid Schema ---
 export type BidDocument = Bid & Document;
 @Schema({ timestamps: true })
 export class Bid {
@@ -64,17 +108,16 @@ export class Bid {
   bidderWallet: string;
 
   @Prop({ required: true })
-  bidderName: string; // Для удобства отображения
+  bidderName: string;
 
   @Prop({ required: true })
-  amount: number; // Предложенная цена
+  amount: number;
 
   @Prop({ default: false })
-  isDepositPaid: boolean; // Оплачен ли взнос за участие
+  isDepositPaid: boolean;
 }
 export const BidSchema = SchemaFactory.createForClass(Bid);
 
-// --- Invoice Schema ---
 export type InvoiceDocument = Invoice & Document;
 @Schema({ timestamps: true })
 export class Invoice {
@@ -88,22 +131,24 @@ export class Invoice {
   buyerWallet: string;
 
   @Prop({ required: true })
-  totalAmount: number; // Для отображения поставщику, в блокчейне скроем
+  totalAmount: number;
 
   @Prop()
-  description: string; // "Оплата за серверы"
+  description: string;
 
-  @Prop({ enum: ['pending', 'paid', 'cancelled'], default: 'pending' }) // Добавил cancelled
+  @Prop({ enum: ['pending', 'paid', 'cancelled'], default: 'pending' })
   status: string;
+
+  @Prop({ required: true, enum: ['internal', 'external'], default: 'external' })
+  type: string; // НОВОЕ ПОЛЕ
 }
 export const InvoiceSchema = SchemaFactory.createForClass(Invoice);
 
-// --- Employee Schema ---
 export type EmployeeDocument = Employee & Document;
 @Schema({ timestamps: true })
 export class Employee {
   @Prop({ required: true })
-  employerWallet: string; // Кто платит (компания)
+  employerWallet: string;
 
   @Prop({ required: true })
   name: string;
@@ -112,9 +157,15 @@ export class Employee {
   walletAddress: string;
 
   @Prop({ required: true })
-  salary: number; // Сумма зарплаты (USD)
+  salary: number;
 
   @Prop({ default: 'active' })
   status: string;
+
+  // НОВОЕ ПОЛЕ
+  @Prop({ required: true, default: 'external', enum: ['internal', 'external'] })
+  paymentType: string;
+
 }
 export const EmployeeSchema = SchemaFactory.createForClass(Employee);
+

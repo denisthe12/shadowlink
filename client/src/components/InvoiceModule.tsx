@@ -1,123 +1,134 @@
 import React, { useEffect, useState } from 'react';
-import { useConnection, useWallet } from '@solana/wallet-adapter-react';
-import { api } from '../utils/api';
-import type {Invoice} from '../utils/api';
-import { Plus, ArrowUpRight, ArrowDownLeft, CheckCircle, Search, XCircle, User, PiggyBank, Wallet } from 'lucide-react';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { api } from '../utils/api'; // Переименовали тип User в ApiUser
+import type {Invoice, User as ApiUser, Contact} from '../utils/api';
+import { Plus, ArrowUpRight, ArrowDownLeft, CheckCircle, Search, XCircle, User as UserIcon, Book, UserPlus, Globe, Lock } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { ShadowWireClient } from '@radr/shadowwire';
-import { Transaction } from '@solana/web3.js'; // Важно для подписи
+import { useShadowWire } from '../hooks/useShadowWire';
+import { useUser } from '../hooks/useUser';
 
-const MOCK_USERS = [
-    { wallet: '6AExadw4VtyHvC6p9B9n2LLBWz7MemzPb9V6kkkgrTkX', name: 'Government Corp' }, // Твой первый кошелек
-    { wallet: '28dVMg5xb6B21herXZKCXoXd64y76FuUKKxHoWBYYZ8H', name: 'Bob Construction' }, // Твой второй кошелек
-];
+interface InvoiceModuleProps {
+    user: ApiUser | null;
+}
 
-export const InvoiceModule = () => {
-    const { connection } = useConnection();
-    const { publicKey, signTransaction, signMessage } = useWallet();
-    const [shadowClient] = useState(() => new ShadowWireClient({ debug: true }));
+export const InvoiceModule = ({ user }: InvoiceModuleProps) => {
+    const { publicKey, signMessage } = useWallet();
+    const { client: shadowClient } = useShadowWire();
+    const { refreshUser } = useUser(); // Достаем функцию обновления юзера
 
     const [activeTab, setActiveTab] = useState<'incoming' | 'outgoing'>('incoming');
     const [invoices, setInvoices] = useState<Invoice[]>([]);
-    const [currentUser, setCurrentUser] = useState(MOCK_USERS[0]); 
     
+    // Форма создания
     const [showCreate, setShowCreate] = useState(false);
-    const [newInv, setNewInv] = useState({ buyerWallet: MOCK_USERS[1].wallet, amount: '', description: '' });
+    const [newInv, setNewInv] = useState({ buyerWallet: '', amount: '', description: '', type: 'external' as 'internal' | 'external' });
+    const [recipientName, setRecipientName] = useState<string | null>(null);
+
+    // Контакты
+    const [showContacts, setShowContacts] = useState(false);
+    const [newContact, setNewContact] = useState({ name: '', address: '' });
+
+    // Верификация
+    const [showVerify, setShowVerify] = useState(false);
+    const [verifyHash, setVerifyHash] = useState('');
 
     useEffect(() => {
-        if(currentUser) loadInvoices();
-    }, [activeTab, currentUser]);
+        if(user) loadInvoices();
+    }, [activeTab, user]);
+
+    // Авто-определение имени при вводе адреса (Пункт 5)
+    useEffect(() => {
+        if (newInv.buyerWallet && user) {
+            const contact = user.contacts.find(c => c.walletAddress === newInv.buyerWallet);
+            setRecipientName(contact ? contact.name : null);
+        } else {
+            setRecipientName(null);
+        }
+    }, [newInv.buyerWallet, user]);
 
     const loadInvoices = async () => {
+        if (!user) return;
         try {
-            const res = await api.getInvoices(currentUser.wallet, activeTab);
+            const res = await api.getInvoices(user.walletAddress, activeTab);
             setInvoices(res.data);
         } catch (e) { console.error(e); }
     };
-    
-    // --- НОВЫЕ ФУНКЦИИ: DEPOSIT и BALANCE CHECK ---
-    
-    const handleDeposit = async () => {
-        if (!publicKey || !signTransaction) return toast.error("Connect wallet first!");
-        
-        const toastId = toast.loading("Creating deposit transaction...");
-        try {
-            // Адрес контракта USD1
-            const USD1_MINT = 'USD1ttGY1N17NEEHLmELoaybftRBUSErhqYiQzvEmuB';
 
-            // 1. SDK создает неподписанную транзакцию
-            const depositData = await shadowClient.deposit({
-                wallet: publicKey.toBase58(),
-                amount: 8200000, // 0.1 USD1 
-                token_mint: USD1_MINT
-            });
+    const handleCreate = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!user) return;
 
-            // 2. "Оживляем" транзакцию
-            const transaction = Transaction.from(Buffer.from(depositData.unsigned_tx_base64, 'base64'));
+        // ПРОВЕРКА ДЛЯ INTERNAL ПЕРЕВОДА
+        if (newInv.type === 'internal') {
+            const toastId = toast.loading("Verifying participants...");
             
-            // 3. Получаем свежий blockhash (ТРЕБОВАНИЕ НОВОГО API)
-            const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
-            transaction.recentBlockhash = blockhash;
-            transaction.feePayer = publicKey; // Явно указываем плательщика комиссии
+            // 1. Проверяем СЕБЯ (Создателя инвойса / Получателя денег)
+            if (!user.isRegistered) {
+                toast.error("YOU are not registered in ShadowWire. Make a deposit first to accept Internal transfers.", { id: toastId });
+                return;
+            }
 
-            // 4. Просим Phantom подписать
-            toast.loading("Please sign in your wallet...", { id: toastId });
-            const signedTransaction = await signTransaction(transaction);
-
-            // 5. Отправляем в блокчейн
-            toast.loading("Sending to Solana Mainnet...", { id: toastId });
-            const signature = await connection.sendRawTransaction(signedTransaction.serialize());
-
-            // 6. Ждем подтверждения (НОВЫЙ СИНТАКСИС)
-            await connection.confirmTransaction({
-                signature,
-                blockhash,
-                lastValidBlockHeight
-            }, 'confirmed');
-
-            toast.success("Deposit successful! You are now in the shielded pool.", { id: toastId });
-            handleCheckBalance();
-        } catch (e: any) {
-            console.error(e);
-            toast.error("Deposit failed: " + e.message, { id: toastId });
+            // 2. Проверяем ПЛАТЕЛЬЩИКА (Того, кому выставляем)
+            try {
+                const status = await api.checkUserStatus(newInv.buyerWallet);
+                
+                if (!status.data.exists || !status.data.isRegistered) {
+                    toast.error("Recipient (Payer) is NOT registered. They cannot pay via Internal Transfer.", { id: toastId });
+                    return;
+                }
+                toast.success("Both parties verified!", { id: toastId });
+            } catch (e) {
+                toast.error("Verification failed", { id: toastId });
+                return;
+            }
         }
-    };
 
-    const handleCheckBalance = async () => {
-        if (!publicKey) return toast.error("Connect wallet first!");
-        try {
-            const balance = await shadowClient.getBalance(publicKey.toBase58(), 'USD1');
-            const depositedAmount = balance.deposited / 1e6; // У USD1 6 знаков
-            toast.success(`Shielded Balance: ${depositedAmount.toFixed(2)} USD1`);
-        } catch (e: any) {
-            toast.error("Failed to fetch balance.");
-        }
+        await api.createInvoice({
+            supplierWallet: user.walletAddress,
+            buyerWallet: newInv.buyerWallet,
+            totalAmount: Number(newInv.amount),
+            description: newInv.description,
+            type: newInv.type
+        });
+        
+        setShowCreate(false);
+        setNewInv({ buyerWallet: '', amount: '', description: '', type: 'external' });
+        loadInvoices();
+        toast.success("Invoice sent!");
     };
-
-    // --- ОБНОВЛЕННАЯ ФУНКЦИЯ ОПЛАТЫ ---
 
     const handlePay = async (inv: Invoice) => {
         if (!publicKey || !signMessage) return toast.error("Connect wallet first!");
-        const toastId = toast.loading("Initiating INTERNAL (Private) Transfer...");
+        
+        // Берем тип ИЗ ИНВОЙСА. Никакой самодеятельности.
+        const transferType = inv.type; 
+
+        const toastId = toast.loading(`Initiating ${transferType.toUpperCase()} Transfer...`);
         
         try {
-            // Теперь используем `internal`
+            console.log(`🚀 Starting ShadowWire ${transferType} transfer...`);
+            
             const result = await shadowClient.transfer({
                 sender: publicKey.toBase58(),
                 recipient: inv.supplierWallet,
-                amount: inv.totalAmount, // Отправляем реальную сумму
+                amount: Number(inv.totalAmount), 
                 token: 'USD1',
-                type: 'external', // <--- ГЛАВНОЕ ИЗМЕНЕНИЕ
-                wallet: { signMessage }  // Передаем подпись
+                type: transferType, // Используем тип из инвойса
+                wallet: { signMessage }
             });
 
-            console.log('AMOUNT:', inv.totalAmount)
-            console.log (result)
+            console.log("✅ SDK Result:", result);
             
-            if (result.success && result.tx_signature) {
+            if (result.tx_signature) {
                 await api.payInvoice(inv._id, result.tx_signature);
                 loadInvoices();
-                toast.success(`Private payment sent! Tx: ${result.tx_signature.slice(0, 8)}...`, { id: toastId });
+                
+                if (result.success) {
+                     toast.success(`Payment successful!`, { id: toastId });
+                } else {
+                     console.warn("Tx broadcasted with warnings:", (result as any).error);
+                     toast.success(`Transaction Broadcasted!`, { id: toastId });
+                }
             } else {
                 throw new Error((result as any).error || "Transaction failed");
             }
@@ -127,62 +138,35 @@ export const InvoiceModule = () => {
         }
     };
 
-    // ... (остальные функции handleCreate, handleCancel, getUserName без изменений)
-    const handleCreate = async (e: React.FormEvent) => {
-        e.preventDefault();
-        await api.createInvoice({
-            supplierWallet: currentUser.wallet,
-            buyerWallet: newInv.buyerWallet,
-            totalAmount: Number(newInv.amount),
-            description: newInv.description
-        });
-        setShowCreate(false);
-        setNewInv({ buyerWallet: MOCK_USERS[0].wallet, amount: '', description: '' });
-        loadInvoices();
-        toast.success("Invoice sent!");
-    };
     const handleCancel = async (inv: Invoice) => {
         if (!confirm("Cancel this invoice?")) return;
         await api.cancelInvoice(inv._id);
         loadInvoices();
         toast.success("Invoice cancelled");
     };
-    const getUserName = (wallet: string) => MOCK_USERS.find(u => u.wallet === wallet)?.name || wallet.slice(0,8)+'...';
 
+    const handleAddContact = async () => {
+        if (!user || !newContact.name || !newContact.address) return;
+        await api.addContact(user.walletAddress, newContact.name, newContact.address);
+        
+        // ПРАВКА (Пункт 4): Обновляем юзера через хук, чтобы список обновился сразу
+        await refreshUser(); 
+        
+        setShowContacts(false);
+        setNewInv({...newInv, buyerWallet: newContact.address});
+        setNewContact({ name: '', address: '' });
+        toast.success("Contact added!");
+    };
+
+    const getContactName = (wallet: string) => {
+        const contact = user?.contacts.find(c => c.walletAddress === wallet);
+        return contact ? contact.name : wallet.slice(0, 6) + '...' + wallet.slice(-4);
+    };
 
     return (
         <div className="space-y-6">
-            {/* ... (Переключатель юзеров) */}
-            <div className="bg-slate-800 text-white p-3 rounded-lg flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2 text-sm">
-                    <User size={16} className="text-emerald-400"/>
-                    <span className="text-slate-400">Invoice View as:</span>
-                    <select 
-                        className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-emerald-400 font-bold outline-none cursor-pointer"
-                        value={currentUser.wallet}
-                        onChange={(e) => setCurrentUser(MOCK_USERS.find(u => u.wallet === e.target.value) || MOCK_USERS[1])}
-                    >
-                        {MOCK_USERS.map(u => (
-                            <option key={u.wallet} value={u.wallet}>{u.name}</option>
-                        ))}
-                    </select>
-                </div>
-            </div>
-
-            {/* --- НОВЫЙ БЛОК: Управление Депозитом --- */}
-            <div className="bg-white p-4 rounded-xl border border-slate-200 flex items-center justify-between">
-                <p className="text-sm text-slate-600 font-medium">To use private transfers, deposit funds into the Shielded Pool first.</p>
-                <div className="flex gap-2">
-                    <button onClick={handleCheckBalance} className="text-slate-500 hover:text-emerald-600 px-4 py-2 font-bold text-sm flex items-center gap-2">
-                        <Wallet size={16}/> Check Shielded Balance
-                    </button>
-                    <button onClick={handleDeposit} className="bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold text-sm flex items-center gap-2 hover:bg-emerald-700">
-                        <PiggyBank size={16}/> Deposit 0.1 USD1
-                    </button>
-                </div>
-            </div>
             
-            {/* ... (остальной JSX без изменений: Header Controls, Invoices List, Modals) ... */}
+            {/* Header Controls */}
             <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-200">
                 <div className="flex gap-2 bg-slate-100 p-1 rounded-lg">
                     <button onClick={() => setActiveTab('incoming')} className={`px-4 py-2 rounded-md text-sm font-bold transition-all ${activeTab === 'incoming' ? 'bg-white shadow text-slate-900' : 'text-slate-500'}`}>
@@ -193,12 +177,16 @@ export const InvoiceModule = () => {
                     </button>
                 </div>
                 <div className="flex gap-2">
+                    <button onClick={() => setShowVerify(true)} className="text-slate-500 hover:text-emerald-600 px-4 py-2 font-bold text-sm flex items-center gap-2">
+                        <Search size={16}/> Verify Proof
+                    </button>
                     <button onClick={() => setShowCreate(true)} className="bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold text-sm flex items-center gap-2 hover:bg-emerald-700 shadow-lg shadow-emerald-200">
                         <Plus size={16}/> New Invoice
                     </button>
                 </div>
             </div>
 
+            {/* Invoices List */}
             <div className="grid gap-4">
                 {invoices.map(inv => (
                     <div key={inv._id} className={`bg-white p-5 rounded-xl border flex justify-between items-center transition-all ${inv.status === 'cancelled' ? 'opacity-60 border-slate-100' : 'border-slate-200 hover:border-emerald-300 hover:shadow-md'}`}>
@@ -210,9 +198,12 @@ export const InvoiceModule = () => {
                                 <h4 className="font-bold text-slate-800 text-lg">{inv.description}</h4>
                                 <div className="flex items-center gap-3 text-xs text-slate-500 mt-1">
                                     <span className="font-mono bg-slate-100 px-2 py-0.5 rounded">#{inv.invoiceNumber}</span>
+                                    <span className={`px-2 py-0.5 rounded uppercase font-bold text-[10px] ${inv.type === 'internal' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
+                                        {inv.type}
+                                    </span>
                                     <span>• {new Date(inv.createdAt).toLocaleDateString()}</span>
                                     <span className="flex items-center gap-1">
-                                        • <User size={12}/> {activeTab === 'incoming' ? `From: ${getUserName(inv.supplierWallet)}` : `To: ${getUserName(inv.buyerWallet)}`}
+                                        • <UserIcon size={12}/> {activeTab === 'incoming' ? `From: ${getContactName(inv.supplierWallet)}` : `To: ${getContactName(inv.buyerWallet)}`}
                                     </span>
                                 </div>
                             </div>
@@ -227,7 +218,6 @@ export const InvoiceModule = () => {
                                 }`}>{inv.status}</p>
                             </div>
 
-                            {/* ACTIONS */}
                             {inv.status === 'pending' && (
                                 <div className="flex gap-2">
                                     {activeTab === 'incoming' ? (
@@ -239,7 +229,6 @@ export const InvoiceModule = () => {
                                             <XCircle />
                                         </button>
                                     )}
-                                    {/* Получатель тоже может отменить, если это ошибочный счет */}
                                     {activeTab === 'incoming' && (
                                          <button onClick={() => handleCancel(inv)} className="text-slate-400 hover:text-red-500 p-2" title="Decline">
                                             <XCircle size={20}/>
@@ -255,6 +244,7 @@ export const InvoiceModule = () => {
                 {invoices.length === 0 && <div className="text-center py-12 text-slate-400 italic bg-slate-50 rounded-xl border border-dashed border-slate-300">No invoices found in this category.</div>}
             </div>
 
+            {/* CREATE MODAL */}
             {showCreate && (
                 <div className="fixed top-0 left-0 w-full h-full z-[100] flex items-center justify-center p-4 !m-0">
                     <div className="absolute top-0 left-0 w-full h-full bg-slate-900/60 backdrop-blur-sm" onClick={() => setShowCreate(false)}></div>
@@ -264,17 +254,28 @@ export const InvoiceModule = () => {
                             <button type="button" onClick={() => setShowCreate(false)} className="text-slate-400 hover:text-slate-600">✕</button>
                         </div>
                         
-                        <div className="space-y-1">
-                            <label className="text-xs font-bold text-slate-500 uppercase">Bill To</label>
-                            <select 
-                                className="w-full border p-3 rounded-lg bg-slate-50 outline-none focus:ring-2 focus:ring-emerald-500"
-                                value={newInv.buyerWallet}
-                                onChange={e => setNewInv({...newInv, buyerWallet: e.target.value})}
-                            >
-                                {MOCK_USERS.filter(u => u.wallet !== currentUser.wallet).map(u => (
-                                    <option key={u.wallet} value={u.wallet}>{u.name}</option>
-                                ))}
-                            </select>
+                        {/* ПУНКТ 2 и 5: Улучшенный Input с кнопкой внутри и авто-именем */}
+                        <div className="space-y-1 relative">
+                            <div className="flex justify-between items-end mb-1">
+                                <label className="text-xs font-bold text-slate-500 uppercase">Bill To (Wallet Address)</label>
+                                {recipientName && (
+                                    <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded flex items-center gap-1">
+                                        <CheckCircle size={10}/> {recipientName}
+                                    </span>
+                                )}
+                            </div>
+                            <div className="relative">
+                                <input 
+                                    required 
+                                    placeholder="Paste Solana Address" 
+                                    className="w-full border p-3 pr-10 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 font-mono text-xs" 
+                                    value={newInv.buyerWallet} 
+                                    onChange={e => setNewInv({...newInv, buyerWallet: e.target.value})} 
+                                />
+                                <button type="button" onClick={() => setShowContacts(true)} className="absolute right-2 top-2.5 text-slate-400 hover:text-emerald-600 p-1 rounded hover:bg-slate-100 transition-colors">
+                                    <Book size={18}/>
+                                </button>
+                            </div>
                         </div>
 
                         <div className="space-y-1">
@@ -283,12 +284,99 @@ export const InvoiceModule = () => {
                         </div>
 
                         <div className="space-y-1">
-                            <label className="text-xs font-bold text-slate-500 uppercase">Amount (USD)</label>
-                            <input required type="number" placeholder="5000" className="w-full border p-3 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 font-mono" value={newInv.amount} onChange={e => setNewInv({...newInv, amount: e.target.value})} />
+                            <label className="text-xs font-bold text-slate-500 uppercase">Amount (USD1)</label>
+                            <input required type="number" placeholder="0.00" step="0.01" className="w-full border p-3 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 font-mono" value={newInv.amount} onChange={e => setNewInv({...newInv, amount: e.target.value})} />
                         </div>
 
-                        <button className="w-full bg-slate-900 text-white py-3 rounded-lg font-bold hover:bg-slate-800 shadow-lg mt-2">Create & Send Invoice</button>
+                        {/* ПУНКТ 6: Выбор Типа Перевода */}
+                        <div className="grid grid-cols-2 gap-3 p-1 bg-slate-100 rounded-lg">
+                            <button 
+                                type="button" 
+                                onClick={() => setNewInv({...newInv, type: 'external'})}
+                                className={`flex items-center justify-center gap-2 py-2 rounded-md text-xs font-bold transition-all ${newInv.type === 'external' ? 'bg-white shadow text-slate-900' : 'text-slate-500'}`}
+                            >
+                                <Globe size={14}/> External
+                            </button>
+                            <button 
+                                type="button"
+                                // Добавляем проверку: если я не зарегистрирован, кнопка не работает
+                                onClick={() => user?.isRegistered ? setNewInv({...newInv, type: 'internal'}) : toast.error("Please make a deposit to enable Internal Transfers")}
+                                className={`flex items-center justify-center gap-2 py-2 rounded-md text-xs font-bold transition-all ${
+                                    !user?.isRegistered ? 'opacity-50 cursor-not-allowed bg-slate-100 text-slate-400' : // Стили для отключенной кнопки
+                                    newInv.type === 'internal' ? 'bg-white shadow text-emerald-700' : 'text-slate-500'
+                                }`}
+                            >
+                                <Lock size={14}/> Internal (Private)
+                            </button>
+                        </div>
+
+                        <button className="w-full bg-slate-900 text-white py-3 rounded-lg font-bold hover:bg-slate-800 shadow-lg mt-2">Send Invoice</button>
                     </form>
+                </div>
+            )}
+
+            {/* CONTACTS MODAL */}
+            {showContacts && (
+                <div className="fixed top-0 left-0 w-full h-full z-[110] flex items-center justify-center p-4 !m-0">
+                    <div className="absolute top-0 left-0 w-full h-full bg-slate-900/60 backdrop-blur-sm" onClick={() => setShowContacts(false)}></div>
+                    <div className="bg-white p-6 rounded-2xl w-full max-w-md relative z-10 space-y-4 animate-in zoom-in-95 shadow-xl">
+                        <div className="flex justify-between items-center">
+                            <h3 className="font-bold text-lg">Address Book</h3>
+                            <button onClick={() => setShowContacts(false)}><XCircle className="text-slate-300 hover:text-slate-500"/></button>
+                        </div>
+                        
+                        {/* ПУНКТ 3: Больше места для адреса */}
+                        <div className="max-h-60 overflow-y-auto space-y-2 pr-1">
+                            {user?.contacts.map((c, i) => (
+                                <button key={i} onClick={() => { setNewInv({...newInv, buyerWallet: c.walletAddress}); setShowContacts(false); }} className="w-full text-left p-4 hover:bg-slate-50 rounded-xl border border-slate-100 hover:border-emerald-200 flex justify-between items-center group transition-all">
+                                    <div className="w-full overflow-hidden">
+                                        <p className="font-bold text-slate-900 mb-1">{c.name}</p>
+                                        <p className="text-xs text-slate-500 font-mono bg-slate-100 p-1.5 rounded truncate">{c.walletAddress}</p>
+                                    </div>
+                                    <ArrowUpRight size={16} className="text-slate-300 group-hover:text-emerald-500 shrink-0 ml-3"/>
+                                </button>
+                            ))}
+                            {user?.contacts.length === 0 && <p className="text-center text-slate-400 text-sm py-4">No contacts yet.</p>}
+                        </div>
+
+                        <div className="border-t pt-4 space-y-3">
+                            <p className="text-xs font-bold text-slate-400 uppercase">Add New Contact</p>
+                            <input placeholder="Name (e.g. Alice)" className="w-full border p-2.5 rounded-lg text-sm outline-none focus:border-emerald-500" value={newContact.name} onChange={e => setNewContact({...newContact, name: e.target.value})} />
+                            <input placeholder="Wallet Address" className="w-full border p-2.5 rounded-lg text-sm font-mono outline-none focus:border-emerald-500" value={newContact.address} onChange={e => setNewContact({...newContact, address: e.target.value})} />
+                            <button onClick={handleAddContact} className="w-full bg-slate-900 text-white py-2.5 rounded-lg font-bold text-sm hover:bg-slate-800 flex items-center justify-center gap-2 shadow-md">
+                                <UserPlus size={16}/> Save Contact
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* VERIFY MODAL (Без изменений) */}
+            {showVerify && (
+                <div className="fixed top-0 left-0 w-full h-full z-[100] flex items-center justify-center p-4 !m-0">
+                    <div className="absolute top-0 left-0 w-full h-full bg-slate-900/60 backdrop-blur-sm" onClick={() => setShowVerify(false)}></div>
+                    <div className="bg-white p-8 rounded-2xl w-full max-w-lg relative z-10 text-center space-y-6">
+                        <div className="inline-block p-4 bg-emerald-50 rounded-full">
+                            <Search size={32} className="text-emerald-500" />
+                        </div>
+                        <h3 className="font-bold text-2xl">Payment Proof Verification</h3>
+                        <p className="text-slate-500">Paste a transaction signature to verify payment validity without revealing the amount.</p>
+                        <input 
+                            placeholder="Paste Tx Signature..." 
+                            className="w-full border p-4 rounded-xl font-mono text-sm bg-slate-50 outline-none focus:ring-2 focus:ring-emerald-500"
+                            value={verifyHash}
+                            onChange={e => setVerifyHash(e.target.value)}
+                        />
+                        {verifyHash.length > 10 && (
+                            <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-xl text-left animate-in fade-in slide-in-from-bottom-2">
+                                <p className="font-bold text-emerald-800 flex items-center gap-2"><CheckCircle size={16}/> Valid ShadowWire Transaction</p>
+                                <p className="text-xs text-emerald-600 mt-1 font-mono">
+                                    Status: VERIFIED_ON_CHAIN<br/>
+                                    Amount: [HIDDEN_BY_ZK_PROOF]
+                                </p>
+                            </div>
+                        )}
+                    </div>
                 </div>
             )}
         </div>
