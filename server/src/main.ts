@@ -12,6 +12,7 @@ async function bootstrap() {
   // Но если ты хочешь, можно раскомментировать:
   // app.setGlobalPrefix('api'); 
 
-  await app.listen(3000);
+  const port = process.env.PORT || 3000;
+  await app.listen(port);
 }
 bootstrap();

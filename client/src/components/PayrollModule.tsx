@@ -5,6 +5,7 @@ import type {Employee, User as ApiUser} from '../utils/api';
 import { Plus, Users, Trash2, Play, CheckCircle, Loader2, Edit2, Wallet, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useShadowWire } from '../hooks/useShadowWire';
+import { saveTxToHistory } from './TransactionHistory';
 
 interface PaymentStatus {
     employeeId: string;
@@ -176,6 +177,7 @@ export const PayrollModule = ({ currentUser }: PayrollModuleProps) => {
                         ...prev,
                         [emp._id]: { status: 'completed', employeeId: emp._id, txHash: result.tx_signature }
                     }));
+                    saveTxToHistory(result.tx_signature, 'Payroll Salary');
                 } else {
                     throw new Error((result as any).error || "Tx failed");
                 }

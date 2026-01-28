@@ -6,6 +6,7 @@ import { Plus, ArrowUpRight, ArrowDownLeft, CheckCircle, Search, XCircle, User a
 import toast from 'react-hot-toast';
 import { useShadowWire } from '../hooks/useShadowWire';
 import { useUser } from '../hooks/useUser';
+import { saveTxToHistory } from './TransactionHistory'; // Импортируй
 
 interface InvoiceModuleProps {
     user: ApiUser | null;
@@ -125,6 +126,7 @@ export const InvoiceModule = ({ user }: InvoiceModuleProps) => {
                 
                 if (result.success) {
                      toast.success(`Payment successful!`, { id: toastId });
+                     saveTxToHistory(result.tx_signature, 'Invoice Payment');
                 } else {
                      console.warn("Tx broadcasted with warnings:", (result as any).error);
                      toast.success(`Transaction Broadcasted!`, { id: toastId });

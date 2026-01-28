@@ -5,6 +5,7 @@ import { Plus, Clock, Shield, DollarSign, User as UserIcon, Calendar, Users, Shi
 import { useShadowWire } from '../hooks/useShadowWire';
 import { useWallet } from '@solana/wallet-adapter-react';
 import toast from 'react-hot-toast';
+import { saveTxToHistory } from './TransactionHistory';
 
 interface TenderModuleProps {
     currentUser: ApiUser | null;
@@ -251,6 +252,7 @@ export const TenderModule = ({ currentUser }: TenderModuleProps) => {
                  setSelectedTender(null);
                  if (result.success) {
                     toast.success(`Payment sent!`, { id: toastId });
+                    saveTxToHistory(result.tx_signature, 'Tender Payment');
                  } else {
                     console.warn("Tx broadcasted but reverted:", (result as any).error);
                     toast.success(`Transaction Broadcasted!`, { id: toastId });

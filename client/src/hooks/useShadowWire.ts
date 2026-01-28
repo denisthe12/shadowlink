@@ -5,6 +5,7 @@ import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 import { Transaction, VersionedTransaction } from '@solana/web3.js';
 import toast from 'react-hot-toast';
 import { Buffer } from 'buffer';
+import { saveTxToHistory } from '../components/TransactionHistory';
 
 const USD1_MINT = 'USD1ttGY1N17NEEHLmELoaybftRBUSErhqYiQzvEmuB';
 const DECIMALS = 6; // У USD1 6 знаков
@@ -65,6 +66,7 @@ export const useShadowWire = () => {
             await connection.confirmTransaction({ signature, blockhash, lastValidBlockHeight }, 'confirmed');
 
             toast.success(`Deposit Successful! +${amount} USD1`, { id: toastId });
+            saveTxToHistory(signature, 'Deposit');
             updateBalance(); // Обновляем цифру в хедере
             return true;
         } catch (error: any) {
@@ -128,6 +130,7 @@ export const useShadowWire = () => {
             await connection.confirmTransaction({ signature, blockhash, lastValidBlockHeight }, 'confirmed');
 
             toast.success(`Withdrawal Successful! -${amount} USD1`, { id: toastId });
+            saveTxToHistory(signature, 'withdraw');
             updateBalance();
             return true;
         } catch (error: any) {

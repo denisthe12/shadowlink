@@ -6,6 +6,7 @@ import { WalletModalProvider, WalletMultiButton } from '@solana/wallet-adapter-r
 import { Toaster } from 'react-hot-toast';
 import { LayoutDashboard, Briefcase, Users, RefreshCw, Wallet, ArrowDownCircle, ArrowUpCircle, ShieldCheck, FileText, CheckCircle, AlertTriangle } from 'lucide-react';
 import clsx from 'clsx';
+import { TransactionHistory } from './components/TransactionHistory';
 
 import { TenderModule } from './components/TenderModule';
 import { InvoiceModule } from './components/InvoiceModule';
@@ -18,7 +19,7 @@ import '@solana/wallet-adapter-react-ui/styles.css';
 
 function App() {
   const network = WalletAdapterNetwork.Mainnet;
-  const endpoint = useMemo(() => `https://mainnet.helius-rpc.com/?api-key=${import.meta.env.VITE_API_KEY}`, []);
+  const endpoint = useMemo(() => import.meta.env.VITE_RPC_URL, []);
   const wallets = useMemo(() => [new PhantomWalletAdapter(), new SolflareWalletAdapter()], []);
 
   return (
@@ -190,7 +191,10 @@ const ShadowLinkApp = () => {
                 </div>
               </div>
             )}
-            <WalletMultiButton />
+            <div className="flex items-center gap-2">
+              <TransactionHistory /> {/* Новая кнопка */}
+              <WalletMultiButton />
+            </div>
           </div>
         </header>
 
