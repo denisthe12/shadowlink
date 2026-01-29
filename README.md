@@ -5,6 +5,7 @@
 > Built with **ShadowWire SDK**, NestJS, React, and MongoDB.
 
 <div align="center">
+
 [![Live Demo](https://img.shields.io/badge/🚀_Live_Demo-shadowlink.vercel.app-10b981?style=for-the-badge)](https://shadowlink-lemon.vercel.app)
 
 [![Video Demo](https://img.shields.io/badge/▶_Watch_Video-Demo-red?style=for-the-badge)](https://youtu.be/9btKsPJJRuM)
@@ -24,7 +25,7 @@
 <!-- Замени VIDEO_ID на ID твоего видео на YouTube или вставь картинку-ссылку на Loom -->
 <div align="center">
   <a href="https://youtu.be/9btKsPJJRuM">
-    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/master-ball.png" alt="Watch the Demo Video" width="100%" style="border-radius: 10px; border: 1px solid #ddd;" />
+    <img src="./preview.jpg" alt="Watch Demo Video" width="100%" style="border-radius: 10px; border: 1px solid #ddd; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
     <br>
     <i>Click to watch the full walkthrough demonstrating Mainnet transactions</i>
   </a>
