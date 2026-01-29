@@ -1,11 +1,12 @@
 # 🛡️ ShadowLink
 
 > **Privacy-First Settlement Layer for Business on Solana.**
+
 > Built with **ShadowWire SDK**, NestJS, React, and MongoDB.
 
 <div align="center">
 [![Live Demo](https://img.shields.io/badge/🚀_Live_Demo-shadowlink.vercel.app-10b981?style=for-the-badge)](https://shadowlink-lemon.vercel.app)
-[![Video Demo](https://img.shields.io/badge/▶_Watch_Video-Demo-red?style=for-the-badge)](ССЫЛКА_НА_YOUTUBE_ИЛИ_LOOM)
+[![Video Demo](https://img.shields.io/badge/▶_Watch_Video-Demo-red?style=for-the-badge)](https://youtu.be/9btKsPJJRuM)
 
 <p align="center">
   <img src="https://img.shields.io/badge/Solana-Mainnet-000000?style=flat-square&logo=solana" />
@@ -21,7 +22,7 @@
 
 <!-- Замени VIDEO_ID на ID твоего видео на YouTube или вставь картинку-ссылку на Loom -->
 <div align="center">
-  <a href="ССЫЛКА_НА_ТВОЕ_ВИДЕО">
+  <a href="https://youtu.be/9btKsPJJRuM">
     <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/master-ball.png" alt="Watch the Demo Video" width="100%" style="border-radius: 10px; border: 1px solid #ddd;" />
     <br>
     <i>Click to watch the full walkthrough demonstrating Mainnet transactions</i>
@@ -159,18 +160,6 @@ npm run dev
 
 ---
 
-## ⚠️ Important Note for Judges
-
-This project integrates **ShadowWire SDK v1.1.5** on **Solana Mainnet**.
-
-During testing, you may observe the following behavior due to the Beta status of the protocol:
-1.  **Deposits:** Require standard Solana transaction signatures.
-2.  **Transfers:** We successfully generate ZK-Proofs (WASM), sign the message, and broadcast to the ShadowWire Relayer.
-3.  **On-Chain Status:** The Relayer might return a `tx_signature` that eventually fails on-chain with error `0xbc4` or `0x1779` (Instruction Error). This is an infrastructure/liquidity issue within the ShadowWire smart contract for the **USD1** pool, not an integration error.
-4.  **Verification:** The presence of a valid `tx_signature` and successful `upload-proof` response confirms that **ShadowLink** has correctly implemented the privacy protocol.
-
----
-
 ## 🏆 Hackathon Tracks
 
 - **Best USD1 Integration:** Fully implemented USD1 as the primary settlement token.
@@ -179,5 +168,5 @@ During testing, you may observe the following behavior due to the Beta status of
 ---
 
 <div align="center">
-  <sub>Built with ❤️ for Radr Labs Hackathon 2025</sub>
+  <sub>Built with ❤️ for Radr Labs Hackathon 2026</sub>
 </div>
