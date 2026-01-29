@@ -6,16 +6,15 @@ import { useShadowWire } from '../hooks/useShadowWire';
 import { useWallet } from '@solana/wallet-adapter-react';
 import toast from 'react-hot-toast';
 import { saveTxToHistory } from './TransactionHistory';
+import { useUser } from '../hooks/useUser';
 
-interface TenderModuleProps {
-    currentUser: ApiUser | null;
-}
 
-export const TenderModule = ({ currentUser }: TenderModuleProps) => {
+export const TenderModule = () => {
     const [tenders, setTenders] = useState<Tender[]>([]);
     const [loading, setLoading] = useState(false);
     const { publicKey, signMessage } = useWallet();
     const { client: shadowClient } = useShadowWire();
+    const { user: currentUser, refreshUser } = useUser(); 
     
     // Кэш имен создателей { wallet: companyName }
     const [creatorsMap, setCreatorsMap] = useState<Record<string, string>>({});
@@ -105,7 +104,7 @@ export const TenderModule = ({ currentUser }: TenderModuleProps) => {
         
         setShowProfileSettings(false);
         toast.success("Company profile updated!");
-        // В App.tsx нету авто-рефреша юзера при изменении профиля, но для MVP сойдет
+        await refreshUser(); 
     };
 
     const handleViewCompany = async (wallet: string) => {
@@ -454,7 +453,14 @@ export const TenderModule = ({ currentUser }: TenderModuleProps) => {
                         </div>
                         <div className="flex justify-end gap-3 pt-2">
                             <button type="button" onClick={() => setShowCreate(false)} className="px-5 py-2 text-slate-600 font-medium hover:bg-slate-100 rounded-lg">Cancel</button>
-                            <button className="bg-slate-900 text-white px-6 py-2 rounded-lg font-bold hover:bg-slate-800 shadow-lg">Publish Tender</button>
+                            <button 
+                                type="submit" 
+                                disabled={loading} // Блокируем
+                                className={`bg-slate-900 text-white px-6 py-2 rounded-lg font-bold shadow-lg flex items-center gap-2 ${loading ? 'opacity-70 cursor-not-allowed' : 'hover:bg-slate-800'}`}
+                            >
+                                {loading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>}
+                                {loading ? 'Publishing...' : 'Publish Tender'}
+                            </button>
                         </div>
                     </form>
                 </div>

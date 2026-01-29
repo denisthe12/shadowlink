@@ -41,7 +41,7 @@ const ShadowLinkApp = () => {
   
   // HOOKS
   const { user, activateRegistration } = useUser(); // <-- Наш новый хук
-  const { balance, updateBalance, deposit, withdraw, loading: swLoading } = useShadowWire();
+  const { balance, deposited, updateBalance, deposit, withdraw, loading: swLoading } = useShadowWire();
 
   const [modalType, setModalType] = useState<'deposit' | 'withdraw' | null>(null);
   const [amountInput, setAmountInput] = useState('');
@@ -53,6 +53,13 @@ const ShadowLinkApp = () => {
   useEffect(() => {
     if (publicKey && isSdkReady) updateBalance();
   }, [publicKey, isSdkReady, updateBalance]);
+
+  useEffect(() => {
+    // Проверяем именно deposited
+    if (deposited > 0 && user && !user.isRegistered) {
+      activateRegistration();
+    }
+  }, [deposited, user]);
 
   const handleTransactionSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
@@ -217,7 +224,7 @@ const ShadowLinkApp = () => {
             </div>
 
             {/* Мы передаем user и addContact в модули, чтобы они могли их использовать */}
-            {activeModule === 'gov' && <TenderModule currentUser={user} />}
+            {activeModule === 'gov' && <TenderModule />}
             
             {activeModule === 'supplier' && (
                 <InvoiceModule user={user} />

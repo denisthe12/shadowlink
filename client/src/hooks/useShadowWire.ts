@@ -17,6 +17,7 @@ export const useShadowWire = () => {
     const [client] = useState(() => new ShadowWireClient({ debug: true }));
     const [balance, setBalance] = useState<number | null>(null);
     const [loading, setLoading] = useState(false);
+    const [deposited, setDeposited] = useState<number>(0);
 
     // --- GET BALANCE ---
     const updateBalance = useCallback(async () => {
@@ -26,6 +27,7 @@ export const useShadowWire = () => {
             const bal = await client.getBalance(publicKey.toBase58(), 'USD1');
             // Конвертируем из минимальных единиц
             setBalance(bal.available / Math.pow(10, DECIMALS));
+            setDeposited(bal.deposited / Math.pow(10, DECIMALS));
         } catch (error) {
             console.error("Failed to fetch balance:", error);
         }
@@ -148,6 +150,7 @@ export const useShadowWire = () => {
         updateBalance,
         deposit,
         withdraw,
-        loading
+        loading,
+        deposited
     };
 };
