@@ -101,8 +101,15 @@ PORT=3000
 VITE_API_URL=http://localhost:3000/api
 
 # Solana RPC (Helius/QuickNode recommended for Mainnet)
-VITE_RPC_URL=https://rpc.ankr.com/solana
+VITE_RPC_URL={ADDRESS_RPC}
 ```
+
+**RPC Provider Options:**
+For stable Mainnet performance (especially for Deposits), we recommend using a dedicated RPC with an API Key:
+
+- **Helius**: `https://mainnet.helius-rpc.com/?api-key=YOUR_API_KEY` - [Get free API key](https://helius.dev)
+- **Alchemy**: `https://solana-mainnet.g.alchemy.com/v2/YOUR_API_KEY` - [Get free API key](https://alchemy.com)
+- **QuickNode**: `https://YOUR_ENDPOINT.solana-mainnet.quiknode.pro/YOUR_API_KEY/` - [Get free API key](https://quicknode.com)
 
 ### 3. Install Dependencies
 
