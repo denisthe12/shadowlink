@@ -6,6 +6,7 @@
 
 <div align="center">
 [![Live Demo](https://img.shields.io/badge/🚀_Live_Demo-shadowlink.vercel.app-10b981?style=for-the-badge)](https://shadowlink-lemon.vercel.app)
+
 [![Video Demo](https://img.shields.io/badge/▶_Watch_Video-Demo-red?style=for-the-badge)](https://youtu.be/9btKsPJJRuM)
 
 <p align="center">
