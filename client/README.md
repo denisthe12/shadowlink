@@ -4,7 +4,7 @@ The Frontend application for ShadowLink, built with **React**, **Vite**, and **T
 It integrates the **ShadowWire SDK (WASM)** for client-side Zero-Knowledge Proof generation.
 
 ## 🛠️ Key Technologies
-- **Framework:** React 18 + Vite
+- **Framework:** React 19.2 + Vite
 - **Privacy:** @radr/shadowwire (v1.1.5)
 - **Wallet:** Solana Wallet Adapter (Phantom/Solflare)
 - **UI:** Tailwind CSS + Lucide React
