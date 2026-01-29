@@ -3,6 +3,40 @@
 > **Privacy-First Settlement Layer for Business on Solana.**
 > Built with **ShadowWire SDK**, NestJS, React, and MongoDB.
 
+<div align="center">
+[![Live Demo](https://img.shields.io/badge/🚀_Live_Demo-shadowlink.vercel.app-10b981?style=for-the-badge)](https://shadowlink-lemon.vercel.app)
+[![Video Demo](https://img.shields.io/badge/▶_Watch_Video-Demo-red?style=for-the-badge)](ССЫЛКА_НА_YOUTUBE_ИЛИ_LOOM)
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Solana-Mainnet-000000?style=flat-square&logo=solana" />
+  <img src="https://img.shields.io/badge/ShadowWire-SDK_v1.1.5-blue?style=flat-square" />
+  <img src="https://img.shields.io/badge/Token-USD1-2ea44f?style=flat-square" />
+  <img src="https://img.shields.io/badge/Stack-MERN_%2B_NestJS-orange?style=flat-square" />
+</p>
+</div>
+
+---
+
+## 📽️ Demo Showcase
+
+<!-- Замени VIDEO_ID на ID твоего видео на YouTube или вставь картинку-ссылку на Loom -->
+<div align="center">
+  <a href="ССЫЛКА_НА_ТВОЕ_ВИДЕО">
+    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/master-ball.png" alt="Watch the Demo Video" width="100%" style="border-radius: 10px; border: 1px solid #ddd;" />
+    <br>
+    <i>Click to watch the full walkthrough demonstrating Mainnet transactions</i>
+  </a>
+</div>
+
+---
+
+## 💡 The Problem & Solution
+
+Businesses need privacy, but Blockchains are public.
+*   **Competitors** can see how much you pay suppliers.
+*   **Employees** can see each other's salaries.
+*   **Bidders** can see rival offers in tenders.
+
 **ShadowLink** is a comprehensive B2B platform enabling confidential transactions for public procurement, supply chain invoices, and corporate payroll using Zero-Knowledge Proofs (Bulletproofs) on Solana Mainnet.
 
 ---
@@ -44,7 +78,7 @@
 
 ### 1. Clone Repository
 ```Bash
-git clone https://github.com/YOUR_USERNAME/shadowlink.git
+git clone https://github.com/denisthe12/shadowlink.git
 cd shadowlink
 ```
 
@@ -116,9 +150,11 @@ npm run dev
 
 ### 3. Creating a Private Invoice
 - Go to **Supply Chain Invoices**.
-- Click **New Invoice** -> Select Contact -> Enter Amount.
+- Click **New Invoice**.
+- Select Contact (Bill To) and choose Type: **External** (or Internal if registered).
+- Enter Amount and send.
 - Switch user (or use another wallet) to Pay.
-- Click **Pay Now** -> **External Transfer**.
+- Click **Pay Now**.
 - **Result:** You will see a `tx_signature` proving the transaction was broadcasted to Solana Mainnet via the ShadowWire Relayer.
 
 ---
@@ -142,4 +178,6 @@ During testing, you may observe the following behavior due to the Beta status of
 
 ---
 
-*Built with ❤️ for the Radr Labs Hackathon.*
+<div align="center">
+  <sub>Built with ❤️ for Radr Labs Hackathon 2025</sub>
+</div>
