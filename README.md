@@ -150,7 +150,7 @@ npm run dev
 ## 🧪 Demo & Usage Guide
 
 ### 1. Connect Wallet
-- Switch Phantom to **Mainnet Beta**.
+- Switch Phantom to **Mainnet**.
 - Ensure you have some **SOL** for gas and **USD1** tokens.
 
 ### 2. Deposit (Shielding Funds)
